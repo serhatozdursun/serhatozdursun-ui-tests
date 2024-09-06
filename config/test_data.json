@@ -1,0 +1,30 @@
+{
+  "home_page": {
+    "header_text": "Mehmet Serhat Özdursun",
+    "header_tag": "h1",
+    "sub_header_text": "QA Automation Engineer",
+    "sub_header_tag": "h2",
+    "icons": [
+        {
+            "href": "https://www.linkedin.com/in/serhat-ozdursun/",
+            "src": "/linkedin-icon.png"
+        },
+        {
+            "href": "https://www.upwork.com/freelancers/~012512aef2eaee40a9",
+            "src": "/upwork.png"
+        },
+        {
+            "href": "https://github.com/serhatozdursun",
+            "src": "/github-icon.png"
+        },
+        {
+            "href": "https://medium.com/@serhat-ozdursun",
+            "src": "/medium_icon.png"
+        },
+        {
+            "href": "https://www.hackerrank.com/profile/serhat_ozdursun",
+            "src": "/hackerrank.png"
+        }
+    ]
+  }
+}
