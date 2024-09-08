@@ -15,7 +15,6 @@ def driver(request):
 
     # Retrieve the base URL from command line, fall back to pytest.ini
     base_url = request.config.getoption("--base_url") or request.config.getini('base_url')
-    base_url = f'https://{base_url}'
 
     # Log the base_url and browser for debugging purposes
     logger.debug(f"Base URL used for WebDriver initialization: {base_url}")
