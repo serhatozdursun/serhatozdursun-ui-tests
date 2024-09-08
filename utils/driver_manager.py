@@ -4,15 +4,16 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
 
+
 class DriverManager:
-    def __init__(self, base_url="https://www.serhatozdursun.com"):
+    def __init__(self, base_url):
         self.driver = None
         self.base_url = base_url
 
-    def initialize_driver(self, browser="chrome"):
+    def initialize_driver(self, browser):
         if browser == "chrome":
             chrome_options = webdriver.ChromeOptions()
-            #chrome_options.add_argument("--headless")  # For CI/CD pipelines
+            chrome_options.add_argument("--headless")  # For CI/CD pipelines
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--start-maximized")  # Start browser in full-screen mode
