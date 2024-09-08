@@ -12,6 +12,9 @@ env/
 .ENV/
 .env/
 
+reports
+reports/*.*
+
 # macOS files
 .DS_Store
 
