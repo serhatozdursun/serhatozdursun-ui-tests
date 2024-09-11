@@ -13,6 +13,13 @@ jobs:
       - name: Checkout resume repository
         uses: actions/checkout@v3
 
+      - name: Check if directory exists
+        run: |
+          if [ ! -d "serhatozdursun-ui-tests" ]; then
+            echo "Directory serhatozdursun-ui-tests does not exist!"
+            exit 1
+          fi
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
