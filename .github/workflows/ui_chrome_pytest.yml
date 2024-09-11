@@ -13,22 +13,6 @@ jobs:
       - name: Checkout resume repository
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies and build
-        run: |
-          yarn install
-          yarn build
-
-      - name: Start the application
-        run: |
-          yarn start &
-        env:
-          PORT: 3000
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -49,12 +33,6 @@ jobs:
           sudo mv chromedriver /usr/local/bin/chromedriver
           sudo chmod +x /usr/local/bin/chromedriver
 
-      - name: Clone the test repository
-        run: |
-          git clone https://github.com/serhatozdursun/serhatozdursun-ui-tests.git
-        env:
-          GITHUB_TOKEN: ${{ secrets.UI_TEST_TOKEN }}
-
       - name: Install Python dependencies
         working-directory: serhatozdursun-ui-tests
         run: |
@@ -64,7 +42,7 @@ jobs:
         working-directory: serhatozdursun-ui-tests
         id: run_tests
         run: |
-          pytest --browser chrome --base_url http://localhost:3000 --html=reports/html/report.html --junitxml=reports/report.xml
+          pytest --browser chrome --html=reports/html/report.html --junitxml=reports/report.xml
 
       - name: Upload HTML report
         if: always()

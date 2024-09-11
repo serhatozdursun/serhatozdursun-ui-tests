@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        language:  ['typescript' , 'javascript']
+        language:  ['python']
 
     steps:
       - name: Checkout repository
