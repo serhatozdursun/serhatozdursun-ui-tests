@@ -13,16 +13,6 @@ jobs:
       - name: Checkout resume repository
         uses: actions/checkout@v3
 
-      - name: List files in repository
-        run: ls -R
-
-      - name: Check if directory exists
-        run: |
-          if [ ! -d "serhatozdursun-ui-tests" ]; then
-            echo "Directory serhatozdursun-ui-tests does not exist!"
-            exit 1
-          fi
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -44,12 +34,10 @@ jobs:
           sudo chmod +x /usr/local/bin/chromedriver
 
       - name: Install Python dependencies
-        working-directory: serhatozdursun-ui-tests
         run: |
           pip install -r requirements.txt
 
       - name: Run tests
-        working-directory: serhatozdursun-ui-tests
         id: run_tests
         run: |
           pytest --browser chrome --html=reports/html/report.html --junitxml=reports/report.xml
@@ -59,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: html-report
-          path: serhatozdursun-ui-tests/reports/html
+          path: reports/html
         continue-on-error: true
 
       - name: Upload XML report
@@ -67,5 +55,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: xml-report
-          path: serhatozdursun-ui-tests/reports/report.xml
+          path: reports/report.xml
         continue-on-error: true
