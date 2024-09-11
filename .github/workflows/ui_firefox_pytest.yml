@@ -1,4 +1,4 @@
-name: UI Automation Test for Firefox
+name: UI Automation Test for Firefox Test
 
 on:
   pull_request:
