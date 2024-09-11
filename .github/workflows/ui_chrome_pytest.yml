@@ -13,6 +13,9 @@ jobs:
       - name: Checkout resume repository
         uses: actions/checkout@v3
 
+      - name: List files in repository
+        run: ls -R
+
       - name: Check if directory exists
         run: |
           if [ ! -d "serhatozdursun-ui-tests" ]; then
