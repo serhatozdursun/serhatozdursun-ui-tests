@@ -1,0 +1,47 @@
+name: UI Automation Test for Firefox Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout resume repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Set up Firefox and GeckoDriver
+        uses: browser-actions/setup-firefox@latest
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run tests
+        id: run_tests
+        run: |
+          pytest --browser firefox --html=reports/html/report.html --junitxml=reports/report.xml
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report
+          path: reports/html
+        continue-on-error: true
+
+      - name: Upload XML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xml-report
+          path: reports/report.xml
+        continue-on-error: true
