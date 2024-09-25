@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 @pytest.fixture
 def home_page(driver):
-    """Fixture to initialize HomePage object."""
+    '''Fixture to initialize HomePage object.'''
     return HomePage(driver)
 
 
@@ -16,7 +16,7 @@ class TestHomePage:
         check.equal(
             actual,
             expected,
-            f"Expected {element_name}: {expected}, but got {actual}"
+            f'Expected {element_name}: {expected}, but got {actual}'
         )
 
     def test_home_page_header(self, home_page, test_data):
@@ -53,7 +53,7 @@ class TestHomePage:
 
     def test_home_profile_image(self, home_page):
         profile_image = home_page.get_profile_image()
-        assert profile_image.is_displayed(), "Profile image is not visible on the home page"
+        assert profile_image.is_displayed(), 'Profile image is not visible on the home page'
 
     def test_left_column_link_container(self, home_page):
         left_column_links = home_page.get_left_container()
@@ -62,12 +62,12 @@ class TestHomePage:
             img = home_page.get_left_column_image(link)
             a = home_page.get_left_column_link(link)
 
-            assert img.is_displayed(), "Image is not displayed in left column container"
-            assert a.is_enabled(), "Link is not enabled in left column container"
+            assert img.is_displayed(), 'Image is not displayed in left column container'
+            assert a.is_enabled(), 'Link is not enabled in left column container'
 
     def test_email(self, home_page, test_data):
-        email_label_text = test_data['home_page']["email"]["label"]
-        email_value_text = test_data['home_page']["email"]["value"]
+        email_label_text = test_data['home_page']['email']['label']
+        email_value_text = test_data['home_page']['email']['value']
 
         email_label = home_page.get_email_label()
         email_value = home_page.get_email_text()
@@ -77,4 +77,8 @@ class TestHomePage:
 
     def test_summary(self, home_page):
         summary = home_page.get_summary()
-        assert summary.is_displayed(), "Summary is not displayed in left column container"
+        assert summary.is_displayed(), 'Summary is not displayed in left column container'
+
+    def test_send_message(self, home_page):
+        send_message_text = home_page.get_send_message_text()
+        assert send_message_text == 'Send a message', 'Send message title was not expected'

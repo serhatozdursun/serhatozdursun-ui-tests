@@ -22,6 +22,7 @@ class HomePage(BasePage):
         self.languages_locator = HOME_PAGE_LOCATORS['languages']
         self.summary_locator = HOME_PAGE_LOCATORS['summary']
         self.experience_container_locator = HOME_PAGE_LOCATORS['experience_container']
+        self.sendMessageText = HOME_PAGE_LOCATORS['sendMessageText']
 
     def get_header_text(self):
         """Return the header text."""
@@ -96,3 +97,6 @@ class HomePage(BasePage):
 
     def get_experience_container(self):
         return self.wait_for_element(self.experience_container_locator)
+
+    def get_send_message_text(self):
+        return self.get_text(self.sendMessageText)
