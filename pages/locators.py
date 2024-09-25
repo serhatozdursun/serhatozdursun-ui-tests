@@ -15,6 +15,6 @@ HOME_PAGE_LOCATORS = {
     'phone': (By.ID, 'phone'),
     'languages': (By.ID, 'languages'),
     'summary': (By.ID, 'summary'),
-    'experience_container': (By.ID, 'experience_container')
-
+    'experience_container': (By.ID, 'experience_container'),
+    'sendMessageText': (By.ID, 'sendMessageText')
 }
