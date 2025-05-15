@@ -38,18 +38,38 @@ class TestHomePage:
         self.verify_text(sub_header_tag, expected_sub_header_tag, 'sub-header tag')
 
     def test_home_page_icons(self, home_page, test_data):
-        icon_links = home_page.get_icon_links()
+        """
+        Verifies that each home page icon's href and src match the expected values.
 
+        - Asserts total number of icons matches the expected data.
+        - Validates href and src for each icon individually.
+        """
+        icon_links = home_page.get_icon_links()
+        expected_icons = test_data['home_page']['icons']
+
+        actual_count = len(icon_links)
+        expected_count = len(expected_icons)
+
+        # Step 1: Assert the number of icons matches
+        assert actual_count == expected_count, (
+            f"Mismatch in icon count: found {actual_count} icons on the page, "
+            f"but {expected_count} were expected."
+        )
+
+        # Step 2: Validate each icon's href and src
         for i, link in enumerate(icon_links):
             actual_href = home_page.get_icon_href(link)
             icon_src = home_page.get_icon_src(link)
             actual_src_path = urlparse(icon_src).path
 
-            expected_href = test_data['home_page']['icons'][i]['href']
-            expected_src = test_data['home_page']['icons'][i]['src']
+            expected_href = expected_icons[i]['href']
+            expected_src = expected_icons[i]['src']
 
-            self.verify_text(actual_href, expected_href, 'icon href')
-            self.verify_text(actual_src_path, expected_src, 'icon src')
+            # Step 2a: Verify icon href
+            self.verify_text(actual_href, expected_href, f'Icon {i} href mismatch')
+
+            # Step 2b: Verify icon src
+            self.verify_text(actual_src_path, expected_src, f'Icon {i} src mismatch')
 
     def test_home_profile_image(self, home_page):
         profile_image = home_page.get_profile_image()
