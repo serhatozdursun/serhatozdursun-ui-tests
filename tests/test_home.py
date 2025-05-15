@@ -37,7 +37,6 @@ class TestHomePage:
         self.verify_text(sub_header_text, expected_sub_header_text, 'sub-header text')
         self.verify_text(sub_header_tag, expected_sub_header_tag, 'sub-header tag')
 
-    @pytest.mark.in_progress
     def test_home_page_icons(self, home_page, test_data):
         """
         Verifies that each home page icon's href and src match the expected values.
