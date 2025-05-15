@@ -28,7 +28,7 @@ jobs:
       - name: Run tests
         id: run_tests
         run: |
-          pytest --browser firefox --html=reports/html/report.html --junitxml=reports/report.xml
+          pytest --browser firefox -m "not in_progress" --html=reports/html/report.html --junitxml=reports/report.xml
 
       - name: Upload HTML report
         if: always()
