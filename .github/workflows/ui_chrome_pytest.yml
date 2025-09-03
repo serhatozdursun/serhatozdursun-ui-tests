@@ -10,37 +10,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout resume repository
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
 
-      - name: Install Chrome
-        run: |
-          sudo apt update
-          sudo apt install -y wget gnupg
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+      # Install Chrome (kept in sync by the action)
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@b94431e051d1c52dcbe9a7092a4f10f827795416
 
-      - name: Install ChromeDriver
-        run: |
-          CHROMEDRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-          wget https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip
-          unzip chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/chromedriver
-          sudo chmod +x /usr/local/bin/chromedriver
+      # Cache webdriver_manager downloads (so ChromeDriver isn't re-downloaded every run)
+      - name: Cache WebDriver binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.wdm
+          key: wdm-${{ runner.os }}-chrome
+          restore-keys: |
+            wdm-${{ runner.os }}-
 
       - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
 
-      - name: Run tests
+      - name: Run tests (Chrome)
         id: run_tests
+        env:
+          # Not strictly needed for Chrome, but harmless; helpful if you ever use Firefox in this job.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WDM_LOCAL: "1"
         run: |
-          pytest --browser chrome -m "not in_progress" --html=reports/html/report.html --junitxml=reports/report.xml
+          mkdir -p reports/html
+          pytest \
+            --browser chrome \
+            -m "not in_progress" \
+            --html=reports/html/report.html \
+            --junitxml=reports/report.xml
 
       - name: Upload HTML report
         if: always()
@@ -48,7 +55,6 @@ jobs:
         with:
           name: html-report
           path: reports/html
-        continue-on-error: true
 
       - name: Upload XML report
         if: always()
@@ -56,4 +62,3 @@ jobs:
         with:
           name: xml-report
           path: reports/report.xml
-        continue-on-error: true

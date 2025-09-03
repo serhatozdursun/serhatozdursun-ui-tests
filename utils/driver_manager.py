@@ -10,16 +10,16 @@ class DriverManager:
 
     def initialize_driver(self, browser: str):
         if browser == "chrome":
+            from webdriver_manager.chrome import ChromeDriverManager
+
             opts = webdriver.ChromeOptions()
             opts.add_argument("--headless=new")
             opts.add_argument("--disable-gpu")
             opts.add_argument("--no-sandbox")
             opts.add_argument("--window-size=1920,1080")
 
-            # Always use webdriver_manager for Chrome (avoid stale PATH chromedriver)
-            from webdriver_manager.chrome import ChromeDriverManager
-            pinned = os.getenv("CHROMEDRIVER_VERSION", "").strip()  # optional pin
-            service = ChromeService(ChromeDriverManager(version=pinned or None).install())
+            # No 'version=' kwarg — let wdm pick the right one for Chrome 140
+            service = ChromeService(ChromeDriverManager().install())
             self.driver = webdriver.Chrome(service=service, options=opts)
 
         elif browser == "firefox":
