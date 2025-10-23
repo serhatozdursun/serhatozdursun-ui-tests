@@ -26,6 +26,10 @@
         "src": "/github-icon.png"
       },
       {
+        "href": "https://atsqa.org/certified-testers/profile/dff138edc5684bd8aef8a2ca49779229",
+        "src": "/certified-tester-logo.svg"
+      },
+      {
         "href": "https://medium.com/@serhat-ozdursun",
         "src": "/medium_icon.png"
       },
@@ -33,7 +37,7 @@
         "href": "https://www.hackerrank.com/profile/serhat_ozdursun",
         "src": "/hackerrank.png"
       },
-            {
+      {
         "href": "https://dev.to/serhat_ozdursun_03644ef56",
         "src": "/dev.webp"
       }

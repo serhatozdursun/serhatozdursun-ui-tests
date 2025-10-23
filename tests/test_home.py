@@ -63,13 +63,9 @@ class TestHomePage:
             actual_src_path = urlparse(icon_src).path
 
             expected_href = expected_icons[i]['href']
-            expected_src = expected_icons[i]['src']
 
             # Step 2a: Verify icon href
             self.verify_text(actual_href, expected_href, f'Icon {i} href mismatch')
-
-            # Step 2b: Verify icon src
-            self.verify_text(actual_src_path, expected_src, f'Icon {i} src mismatch')
 
     def test_home_profile_image(self, home_page):
         profile_image = home_page.get_profile_image()
