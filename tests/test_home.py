@@ -11,7 +11,6 @@ def home_page(driver):
 
 
 class TestHomePage:
-
     def verify_text(self, actual, expected, element_name):
         check.equal(
             actual,
