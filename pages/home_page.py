@@ -1,28 +1,37 @@
-from selenium.webdriver.remote.webelement import WebElement
-
-from pages.locators import HOME_PAGE_LOCATORS
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support.ui import WebDriverWait
+
 from pages.base_page import BasePage
+from pages.locators import HOME_PAGE_LOCATORS
+
+SCROLL_TO_EXPERIENCE_JS = (
+    "window.scrollTo(0, arguments[0].getBoundingClientRect().top "
+    "+ window.scrollY - 80);"
+)
 
 
 class HomePage(BasePage):
     def __init__(self, driver):
         super().__init__(driver)
-        self.header_locator = HOME_PAGE_LOCATORS['header']
-        self.title_locator = HOME_PAGE_LOCATORS['title']
-        self.icon_wrapper_locator = HOME_PAGE_LOCATORS['icon_wrapper']
-        self.profile_image_locator = HOME_PAGE_LOCATORS['profile_image']
-        self.icon_links_locator = HOME_PAGE_LOCATORS['icon_links']
-        self.icon_image_locator = HOME_PAGE_LOCATORS['icon_image']
-        self.left_column_link_container_locator = HOME_PAGE_LOCATORS['left_column_link_container']
-        self.email_label_locator = HOME_PAGE_LOCATORS['email_label']
-        self.email_locator = HOME_PAGE_LOCATORS['email']
-        self.phone_label_locator = HOME_PAGE_LOCATORS['phone_label']
-        self.phone_locator = HOME_PAGE_LOCATORS['phone']
-        self.languages_locator = HOME_PAGE_LOCATORS['languages']
-        self.summary_locator = HOME_PAGE_LOCATORS['summary']
-        self.experience_container_locator = HOME_PAGE_LOCATORS['experience_container']
-        self.sendMessageText = HOME_PAGE_LOCATORS['sendMessageText']
+        self.header_locator = HOME_PAGE_LOCATORS["header"]
+        self.title_locator = HOME_PAGE_LOCATORS["title"]
+        self.icon_wrapper_locator = HOME_PAGE_LOCATORS["icon_wrapper"]
+        self.profile_image_locator = HOME_PAGE_LOCATORS["profile_image"]
+        self.icon_links_locator = HOME_PAGE_LOCATORS["icon_links"]
+        self.left_column_link_container_locator = HOME_PAGE_LOCATORS[
+            "left_column_link_container"
+        ]
+        self.email_label_locator = HOME_PAGE_LOCATORS["email_label"]
+        self.email_locator = HOME_PAGE_LOCATORS["email"]
+        self.phone_label_locator = HOME_PAGE_LOCATORS["phone_label"]
+        self.phone_locator = HOME_PAGE_LOCATORS["phone"]
+        self.summary_locator = HOME_PAGE_LOCATORS["summary"]
+        self.experience_container_locator = HOME_PAGE_LOCATORS["experience_container"]
+        self.send_message_text_locator = HOME_PAGE_LOCATORS["send_message_text"]
+
+    def wait_for_page_load(self):
+        self.wait_for_element(self.header_locator)
 
     def get_header_text(self):
         """Return the header text."""
@@ -50,12 +59,12 @@ class HomePage(BasePage):
 
     def get_icon_href(self, link: WebElement):
         """Return the href attribute of an icon link."""
-        return link.get_attribute('href')
+        return link.get_attribute("href")
 
     def get_icon_src(self, link: WebElement):
         """Return the src attribute of the image within an icon link."""
-        img = link.find_element(By.TAG_NAME, 'img')
-        return img.get_attribute('src')
+        img = link.find_element(By.TAG_NAME, "img")
+        return img.get_attribute("src")
 
     def get_profile_image(self):
         """Return the profile image element."""
@@ -64,17 +73,13 @@ class HomePage(BasePage):
     def get_left_container(self):
         return self.wait_for_elements(self.left_column_link_container_locator)
 
-    def get_left_column_links(self):
-        """Return all link container elements in the left column."""
-        return self.wait_for_elements(self.left_column_link_container_locator)
-
     def get_left_column_image(self, link_container: WebElement):
         """Return the image element within a left column link container."""
-        return link_container.find_element(By.TAG_NAME, 'img')
+        return link_container.find_element(By.TAG_NAME, "img")
 
-    def get_left_column_link(self,  link_container: WebElement):
+    def get_left_column_link(self, link_container: WebElement):
         """Return the anchor element within a left column link container."""
-        return link_container.find_element(By.TAG_NAME, 'a')
+        return link_container.find_element(By.TAG_NAME, "a")
 
     def get_email_label(self):
         """Return the email label text."""
@@ -96,7 +101,45 @@ class HomePage(BasePage):
         return self.wait_for_element(self.summary_locator)
 
     def get_experience_container(self):
-        return self.wait_for_element(self.experience_container_locator)
+        container = self.wait_for_element(self.experience_container_locator)
+        self.scroll_into_view(container)
+        WebDriverWait(self.driver, 10).until(
+            lambda _: len(container.text.strip()) > len("PROFESSIONAL EXPERIENCE")
+        )
+        return container
+
+    def get_experience_company_names(self):
+        """Collect company names while scrolling.
+
+        Experience entries lazy-load in the section.
+        """
+        container = self.get_experience_container()
+        company_names = set()
+
+        self.driver.execute_script(SCROLL_TO_EXPERIENCE_JS, container)
+
+        stale_rounds = 0
+        for _ in range(50):
+            prev_count = len(company_names)
+            container = self.driver.find_element(*self.experience_container_locator)
+            for link in container.find_elements(By.CSS_SELECTOR, "a[href]"):
+                name = link.text.strip()
+                if name and "," in name:
+                    company_names.add(name)
+
+            self.driver.execute_script(
+                "arguments[0].scrollTop = arguments[0].scrollTop + 400;", container
+            )
+            self.driver.execute_script("window.scrollBy(0, 400);")
+
+            if len(company_names) == prev_count:
+                stale_rounds += 1
+                if stale_rounds >= 3:
+                    break
+            else:
+                stale_rounds = 0
+
+        return company_names
 
     def get_send_message_text(self):
-        return self.get_text(self.sendMessageText)
+        return self.get_text(self.send_message_text_locator)
