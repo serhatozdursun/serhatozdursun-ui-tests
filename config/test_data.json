@@ -42,16 +42,18 @@
         "src": "/dev.webp"
       }
     ],
+    "experience_section_title": "PROFESSIONAL EXPERIENCE",
+    "send_message_text": "Send a message",
     "experience_companies": [
-      "Index, London",
-      "Barcelona, Catalonia, Spain / Madrid, Spain",
-      "Testinium, İstanbul",
-      "Apsiyon, İstanbul",
-      "Paytrek, İstanbul",
-      "Trendyol Group , İstanbul",
-      "Bimsa, İstanbul",
-      "Sigortam.Net, İstanbul",
-      "SET YAZILIM, İstanbul"
+      "Poq (via Index.dev), London",
+      "Affirm, United States",
+      "Payflow (via Hubuc), Barcelona, Spain",
+      "ABB (via Testinium), Istanbul, Turkey",
+      "Apsiyon, Istanbul",
+      "Trendyol Group, Istanbul",
+      "Bimsa, Istanbul",
+      "Sigortam.Net, Istanbul",
+      "SET YAZILIM, Istanbul"
     ]
   }
 }

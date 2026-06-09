@@ -1,5 +1,5 @@
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 class BasePage:
@@ -7,13 +7,19 @@ class BasePage:
         self.driver = driver
 
     def wait_for_element(self, locator, timeout=10):
-        return WebDriverWait(self.driver, timeout).until(EC.visibility_of_element_located(locator))
+        return WebDriverWait(self.driver, timeout).until(
+            EC.visibility_of_element_located(locator)
+        )
 
     def wait_for_elements(self, locator, timeout=10):
-        return WebDriverWait(self.driver, timeout).until(EC.visibility_of_all_elements_located(locator))
+        return WebDriverWait(self.driver, timeout).until(
+            EC.visibility_of_all_elements_located(locator)
+        )
 
     def wait_for_elements_to_be_clickable(self, locator, timeout=10):
-        return WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable(locator))
+        return WebDriverWait(self.driver, timeout).until(
+            EC.element_to_be_clickable(locator)
+        )
 
     def click(self, locator):
         self.wait_for_elements_to_be_clickable(locator).click()
@@ -26,3 +32,8 @@ class BasePage:
 
     def get_tag(self, locator):
         return self.wait_for_element(locator).tag_name
+
+    def scroll_into_view(self, element):
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", element
+        )

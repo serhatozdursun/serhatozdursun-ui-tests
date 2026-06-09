@@ -1,0 +1,88 @@
+name: UI Tests (Production)
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  production_e2e_tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Set up Chrome
+        if: matrix.browser == 'chrome'
+        uses: browser-actions/setup-chrome@v2
+
+      - name: Set up Firefox
+        if: matrix.browser == 'firefox'
+        uses: browser-actions/setup-firefox@v1
+
+      - name: Cache WebDriver binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.wdm
+          key: wdm-${{ runner.os }}-${{ matrix.browser }}
+          restore-keys: |
+            wdm-${{ runner.os }}-
+
+      - name: Install Python dependencies
+        run: poetry install --no-interaction --only main
+
+      - name: Run UI test healer (${{ matrix.browser }}, production)
+        env:
+          WDM_LOCAL: "1"
+          GH_TOKEN: ${{ github.token }}
+          HEALER_PUSH_PR: "true"
+        run: |
+          mkdir -p reports/html reports/screenshots
+          poetry run python scripts/ui_test_healer.py \
+            --push-pr \
+            --browser ${{ matrix.browser }} \
+            --base-url https://www.serhatozdursun.com
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report-production-${{ matrix.browser }}
+          path: reports/html
+
+      - name: Upload XML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xml-report-production-${{ matrix.browser }}
+          path: reports/report.xml
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-production-${{ matrix.browser }}
+          path: reports/screenshots
+
