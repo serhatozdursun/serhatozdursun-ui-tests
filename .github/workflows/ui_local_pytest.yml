@@ -1,0 +1,123 @@
+name: UI Tests (Local Container)
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  local_e2e_tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
+
+    steps:
+      - name: Checkout resume website
+        uses: actions/checkout@v4
+        with:
+          repository: serhatozdursun/resume
+          path: resume
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: resume/yarn.lock
+
+      - name: Build and start application
+        working-directory: resume
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+          yarn start &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null; then
+              echo "Application is ready on http://localhost:3000"
+              exit 0
+            fi
+            echo "Waiting for application... ($i/30)"
+            sleep 5
+          done
+          echo "Application failed to start"
+          exit 1
+        env:
+          PORT: 3000
+
+      - name: Checkout UI tests
+        uses: actions/checkout@v4
+        with:
+          path: ui-tests
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Set up Chrome
+        if: matrix.browser == 'chrome'
+        uses: browser-actions/setup-chrome@b94431e051d1c52dcbe9a7092a4f10f827795416
+
+      - name: Set up Firefox
+        if: matrix.browser == 'firefox'
+        uses: browser-actions/setup-firefox@b94431e051d1c52dcbe9a7092a4f10f827795416
+
+      - name: Cache WebDriver binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.wdm
+          key: wdm-${{ runner.os }}-${{ matrix.browser }}
+          restore-keys: |
+            wdm-${{ runner.os }}-
+
+      - name: Install Python dependencies
+        working-directory: ui-tests
+        run: poetry install --no-interaction --only main
+
+      - name: Run UI test healer (${{ matrix.browser }}, localhost)
+        working-directory: ui-tests
+        env:
+          WDM_LOCAL: "1"
+          GH_TOKEN: ${{ github.token }}
+          HEALER_PUSH_PR: "true"
+        run: |
+          mkdir -p reports/html reports/screenshots
+          poetry run python scripts/ui_test_healer.py \
+            --push-pr \
+            --browser ${{ matrix.browser }} \
+            --base-url http://localhost:3000/
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report-local-${{ matrix.browser }}
+          path: ui-tests/reports/html
+
+      - name: Upload XML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xml-report-local-${{ matrix.browser }}
+          path: ui-tests/reports/report.xml
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-local-${{ matrix.browser }}
+          path: ui-tests/reports/screenshots
+
