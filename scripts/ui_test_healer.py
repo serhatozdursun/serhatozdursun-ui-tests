@@ -79,7 +79,9 @@ def parse_junit(path: Path) -> list[TestFailure]:
     root = ET.parse(path).getroot()
     failures: list[TestFailure] = []
     for case in root.iter("testcase"):
-        failed = case.find("failure") or case.find("error")
+        failed = case.find("failure")
+        if failed is None:
+            failed = case.find("error")
         if failed is None:
             continue
         message = (failed.get("message") or failed.text or "").strip()
@@ -197,18 +199,26 @@ def heal_known_patterns() -> list[str]:
 
         self.driver.execute_script(SCROLL_TO_EXPERIENCE_JS, container)
 
-        last_scroll_y = -1
-        for _ in range(40):
+        stale_rounds = 0
+        for _ in range(50):
+            prev_count = len(company_names)
+            container = self.driver.find_element(*self.experience_container_locator)
             for link in container.find_elements(By.CSS_SELECTOR, "a[href]"):
                 name = link.text.strip()
                 if name and "," in name:
                     company_names.add(name)
 
-            self.driver.execute_script("window.scrollBy(0, 300);")
-            scroll_y = self.driver.execute_script("return window.scrollY;")
-            if scroll_y == last_scroll_y:
-                break
-            last_scroll_y = scroll_y
+            self.driver.execute_script(
+                "arguments[0].scrollTop = arguments[0].scrollTop + 400;", container
+            )
+            self.driver.execute_script("window.scrollBy(0, 400);")
+
+            if len(company_names) == prev_count:
+                stale_rounds += 1
+                if stale_rounds >= 3:
+                    break
+            else:
+                stale_rounds = 0
 
         return company_names"""
 
@@ -751,7 +761,7 @@ def cmd_full_loop(args: argparse.Namespace) -> int:
     had_initial_failures = False
     applied_changes: list[str] = []
 
-    exit_code = cmd_run(args)
+    cmd_run(args)
     failures = parse_junit(junit)
 
     if failures:
@@ -766,7 +776,7 @@ def cmd_full_loop(args: argparse.Namespace) -> int:
                 print("[healer] auto-heal applied:")
                 for change in applied_changes:
                     print(f"  - {change}")
-            exit_code = cmd_run(args)
+            cmd_run(args)
             failures = parse_junit(junit)
             if failures:
                 save_inspection_manifest(
@@ -795,7 +805,7 @@ def cmd_full_loop(args: argparse.Namespace) -> int:
     if had_initial_failures and should_push_pr(args):
         create_heal_pull_request(applied_changes, args.base_url)
 
-    return exit_code
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:

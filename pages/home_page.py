@@ -118,18 +118,26 @@ class HomePage(BasePage):
 
         self.driver.execute_script(SCROLL_TO_EXPERIENCE_JS, container)
 
-        last_scroll_y = -1
-        for _ in range(40):
+        stale_rounds = 0
+        for _ in range(50):
+            prev_count = len(company_names)
+            container = self.driver.find_element(*self.experience_container_locator)
             for link in container.find_elements(By.CSS_SELECTOR, "a[href]"):
                 name = link.text.strip()
                 if name and "," in name:
                     company_names.add(name)
 
-            self.driver.execute_script("window.scrollBy(0, 300);")
-            scroll_y = self.driver.execute_script("return window.scrollY;")
-            if scroll_y == last_scroll_y:
-                break
-            last_scroll_y = scroll_y
+            self.driver.execute_script(
+                "arguments[0].scrollTop = arguments[0].scrollTop + 400;", container
+            )
+            self.driver.execute_script("window.scrollBy(0, 400);")
+
+            if len(company_names) == prev_count:
+                stale_rounds += 1
+                if stale_rounds >= 3:
+                    break
+            else:
+                stale_rounds = 0
 
         return company_names
 
