@@ -1,3 +1,56 @@
+# AGENTS.md
+
+## Cursor Cloud specific instructions
+
+### What this repository is
+
+This repo is a **Python Selenium + pytest UI test suite** for [serhatozdursun.com](https://www.serhatozdursun.com). It is **not** the portfolio site itself — the site lives in the separate [serhatozdursun/resume](https://github.com/serhatozdursun/resume) repository.
+
+Tests use a Page Object Model under `pages/`, expected values in `config/test_data.json`, and headless Chrome/Firefox via `utils/driver_manager.py`.
+
+### Services
+
+| Service | Required? | Notes |
+|--------|-----------|-------|
+| Python 3.10+ (CI uses 3.12) | Yes | `poetry install` |
+| Google Chrome | Yes (default) | Pre-installed on Cloud VMs; tests run headless |
+| Application under test | Yes | Either production URL or local resume app on port 3000 |
+| Firefox + geckodriver | Optional | `pytest --browser firefox` |
+
+There is no docker-compose, Makefile, or local app server in this repo.
+
+### Base URL gotcha
+
+`pytest.ini` defaults to production (`https://www.serhatozdursun.com`). To run against a local resume server:
+
+```bash
+pytest --base_url http://localhost:3000/
+```
+
+### Running tests
+
+```bash
+# Default (Chrome + base_url from pytest.ini)
+poetry run pytest
+
+# Production smoke run
+poetry run pytest --base_url https://www.serhatozdursun.com --browser chrome -v
+```
+
+### Lint / build
+
+```bash
+poetry run ruff check .
+poetry run ruff format --check .
+poetry run black --check .
+```
+
+### Local resume app (optional)
+
+To test against `localhost:3000`, clone and run the resume project separately on port 3000, then run `pytest --base_url http://localhost:3000/`.
+
+---
+
 # Cursor Cloud Agents — serhatozdursun-ui-tests
 
 Configure **two agents** in the [Cursor Cloud dashboard](https://cursor.com/dashboard) for this repository. Both require **Selenium MCP** (`selenium` server, `@angiejones/mcp-selenium`) — add it under Environment → MCP (same as `.vscode/mcp.json`).
@@ -148,7 +201,7 @@ Only merge when verify exits 0 and pytest is fully green.
 poetry run python scripts/ui_test_healer.py --base-url https://www.serhatozdursun.com
 
 # Discoverer
-poetry run python scripts/ui_test_discoverer.py inventory
+poetry run python scripts/ui_test_discoverer.py --base-url https://www.serhatozdursun.com inventory
 # … agent implements tests …
-poetry run python scripts/ui_test_discoverer.py verify --push-pr --merge-pr
+poetry run python scripts/ui_test_discoverer.py --base-url https://www.serhatozdursun.com --push-pr --merge-pr verify
 ```
