@@ -490,9 +490,7 @@ def cmd_inventory(args: argparse.Namespace) -> int:
     gaps = find_gaps(methods)
 
     print(f"[discoverer] crawling same-domain routes from {args.base_url} ...")
-    site_map = build_site_map(
-        args.base_url, args.browser, max_pages=args.max_pages
-    )
+    site_map = build_site_map(args.base_url, args.browser, max_pages=args.max_pages)
     save_json(SITE_MAP_JSON, site_map)
     route_gaps = find_route_gaps(site_map, methods)
 
