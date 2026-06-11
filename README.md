@@ -81,7 +81,7 @@ Install dev dependencies (included in a default `poetry install`):
 poetry install
 ```
 
-Run checks locally:
+Run checks locally (same as CI `lint.yml`):
 
 ```bash
 poetry run ruff check .
@@ -89,7 +89,14 @@ poetry run ruff format --check .
 poetry run black --check .
 ```
 
-Apply formatters:
+**Pre-commit hooks** (automatic on `git commit`):
+
+```bash
+poetry run pre-commit install
+poetry run pre-commit run --all-files   # optional: verify once
+```
+
+Apply formatters manually:
 
 ```bash
 poetry run ruff format .

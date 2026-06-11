@@ -34,7 +34,9 @@ class HomePage(BasePage):
         self.practice_page_link_locator = HOME_PAGE_LOCATORS["practice_page_link"]
         self.ctal_tae_exam_link_locator = HOME_PAGE_LOCATORS["ctal_tae_exam_link"]
         self.ctal_tm_exam_link_locator = HOME_PAGE_LOCATORS["ctal_tm_exam_link"]
-        self.certificates_container_locator = HOME_PAGE_LOCATORS["certificates_container"]
+        self.certificates_container_locator = HOME_PAGE_LOCATORS[
+            "certificates_container"
+        ]
         self.skill_labels_locator = HOME_PAGE_LOCATORS["skill_labels"]
 
     def wait_for_page_load(self):
