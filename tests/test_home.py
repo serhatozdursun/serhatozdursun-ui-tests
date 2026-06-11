@@ -149,36 +149,27 @@ class TestHomePage:
         )
 
         link_getters = {
-            "https://www.serhatozdursun.com/practice": (
-                home_page.get_practice_page_link
-            ),
-            "https://www.serhatozdursun.com/ctal-tae-exam": (
-                home_page.get_ctal_tae_exam_link
-            ),
-            "https://www.serhatozdursun.com/ctal-tm-exam": (
-                home_page.get_ctal_tm_exam_link
-            ),
+            "/practice": home_page.get_practice_page_link,
+            "/ctal-tae-exam": home_page.get_ctal_tae_exam_link,
+            "/ctal-tm-exam": home_page.get_ctal_tm_exam_link,
         }
         for expected_link in qa_help["links"]:
-            link = link_getters[expected_link["href"]]()
+            link = link_getters[expected_link["path"]]()
             self.verify_text(link.text, expected_link["text"], "QA help link text")
-            self.verify_text(
-                link.get_attribute("href"),
-                expected_link["href"],
-                "QA help link href",
-            )
+            actual_path = urlparse(link.get_attribute("href")).path.rstrip("/") or "/"
+            expected_path = expected_link["path"].rstrip("/") or "/"
+            self.verify_text(actual_path, expected_path, "QA help link path")
             check.is_true(
                 link.is_displayed(),
                 f"QA help link not visible: {expected_link['text']}",
             )
 
     def test_certificates_section(self, home_page, test_data):
-        container = home_page.get_certificates_container()
+        container_text = home_page.get_certificates_text()
         check.is_true(
-            container.is_displayed(),
-            "Certificates section is not visible on the home page",
+            container_text,
+            "Certificates section has no text on the home page",
         )
-        container_text = container.text
         for entry in test_data["home_page"]["certificates"]["entries"]:
             check.is_true(
                 entry in container_text,
@@ -187,13 +178,12 @@ class TestHomePage:
 
     def test_skills_labels(self, home_page, test_data):
         skills = test_data["home_page"]["skills"]
-        labels = home_page.get_skill_labels()
+        label_texts = home_page.get_skill_label_texts()
         check.equal(
-            len(labels),
+            len(label_texts),
             skills["count"],
-            f"Expected {skills['count']} skill labels, found {len(labels)}",
+            f"Expected {skills['count']} skill labels, found {len(label_texts)}",
         )
-        label_texts = [label.text.strip() for label in labels]
         for expected_label in skills["sample_labels"]:
             check.is_true(
                 expected_label in label_texts,

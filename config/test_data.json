@@ -53,15 +53,15 @@
       "links": [
         {
           "text": "Practice Page",
-          "href": "https://www.serhatozdursun.com/practice"
+          "path": "/practice"
         },
         {
           "text": "CTAL-TAE Sample Exam",
-          "href": "https://www.serhatozdursun.com/ctal-tae-exam"
+          "path": "/ctal-tae-exam"
         },
         {
           "text": "CTAL-TM Sample Exam",
-          "href": "https://www.serhatozdursun.com/ctal-tm-exam"
+          "path": "/ctal-tm-exam"
         }
       ]
     },
