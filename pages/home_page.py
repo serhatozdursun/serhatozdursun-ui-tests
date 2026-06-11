@@ -243,20 +243,44 @@ class HomePage(BasePage):
         self.scroll_into_view(container)
         return container
 
-    def get_certificates_text(self):
-        container = self.get_certificates_container()
-        text = container.text.strip()
+    def _element_text(self, element) -> str:
+        text = element.text.strip()
         if text:
             return text
         return self.driver.execute_script(
-            "return arguments[0].innerText || '';", container
+            "return arguments[0].innerText || '';", element
         ).strip()
+
+    def get_certificates_text(self):
+        container = self.get_certificates_container()
+        return self._element_text(container)
 
     def get_skill_labels(self):
         self.ensure_left_sidebar_expanded()
-        labels = WebDriverWait(self.driver, 15).until(
+        WebDriverWait(self.driver, 15).until(
             EC.presence_of_all_elements_located(self.skill_labels_locator)
         )
+        labels = self.driver.find_elements(*self.skill_labels_locator)
         if labels:
             self.scroll_into_view(labels[0])
-        return labels
+            try:
+                left_column = self.driver.find_element(
+                    By.ID, "mobile-left-column-content"
+                )
+                self.driver.execute_script(
+                    "arguments[0].scrollTop = arguments[0].scrollHeight;", left_column
+                )
+            except NoSuchElementException:
+                pass
+
+        def _labels_have_text(_driver) -> bool:
+            return any(
+                self._element_text(el)
+                for el in _driver.find_elements(*self.skill_labels_locator)
+            )
+
+        WebDriverWait(self.driver, 15).until(_labels_have_text)
+        return self.driver.find_elements(*self.skill_labels_locator)
+
+    def get_skill_label_texts(self) -> list[str]:
+        return [self._element_text(label) for label in self.get_skill_labels()]

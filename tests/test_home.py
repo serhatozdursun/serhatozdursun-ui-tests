@@ -178,13 +178,12 @@ class TestHomePage:
 
     def test_skills_labels(self, home_page, test_data):
         skills = test_data["home_page"]["skills"]
-        labels = home_page.get_skill_labels()
+        label_texts = home_page.get_skill_label_texts()
         check.equal(
-            len(labels),
+            len(label_texts),
             skills["count"],
-            f"Expected {skills['count']} skill labels, found {len(labels)}",
+            f"Expected {skills['count']} skill labels, found {len(label_texts)}",
         )
-        label_texts = [label.text.strip() for label in labels]
         for expected_label in skills["sample_labels"]:
             check.is_true(
                 expected_label in label_texts,
