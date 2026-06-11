@@ -43,6 +43,7 @@ poetry run pytest --base_url https://www.serhatozdursun.com --browser chrome -v
 poetry run ruff check .
 poetry run ruff format --check .
 poetry run black --check .
+poetry run pre-commit install   # once per clone — runs ruff + black on git commit
 ```
 
 ### Local resume app (optional)
