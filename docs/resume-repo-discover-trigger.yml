@@ -1,0 +1,34 @@
+# Copy this workflow into serhatozdursun/resume as:
+#   .github/workflows/trigger-ui-discoverer.yml
+#
+# When a PR labeled `discover` is merged to main, it notifies the UI test repo
+# to crawl the live site and refresh discovery inventory.
+#
+# Prerequisites (resume repo secrets):
+#   UI_TESTS_DISPATCH_TOKEN — PAT with `repo` scope on serhatozdursun-ui-tests
+
+name: Trigger UI discoverer on labeled merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  trigger_discover:
+    if: >-
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'discover')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify serhatozdursun-ui-tests
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.UI_TESTS_DISPATCH_TOKEN }}
+          repository: serhatozdursun/serhatozdursun-ui-tests
+          event-type: resume-merged-discover
+          client-payload: |
+            {
+              "resume_pr": ${{ github.event.pull_request.number }},
+              "resume_sha": "${{ github.event.pull_request.merge_commit_sha }}",
+              "resume_url": "${{ github.event.pull_request.html_url }}"
+            }

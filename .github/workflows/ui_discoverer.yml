@@ -1,0 +1,89 @@
+# Runs the discoverer inventory after the resume site changes.
+# Triggered by repository_dispatch from serhatozdursun/resume when a PR
+# with label `discover` is merged, or manually from this repo.
+name: UI Test Discoverer (inventory)
+
+on:
+  repository_dispatch:
+    types: [resume-merged-discover]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Site URL to crawl
+        required: false
+        default: https://www.serhatozdursun.com
+
+jobs:
+  discover_inventory:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v2
+
+      - name: Cache WebDriver binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.wdm
+          key: wdm-${{ runner.os }}-chrome
+          restore-keys: |
+            wdm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --only main
+
+      - name: Crawl site and write discovery inventory
+        env:
+          WDM_LOCAL: "1"
+        run: |
+          BASE_URL="${{ github.event.inputs.base_url || 'https://www.serhatozdursun.com' }}"
+          poetry run python scripts/ui_test_discoverer.py \
+            --base-url "$BASE_URL" \
+            --browser chrome \
+            inventory
+
+      - name: Upload discovery artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: discoverer-inventory
+          path: |
+            reports/discoverer/site_map.json
+            reports/discoverer/discovery_manifest.json
+            reports/discoverer/test_inventory.json
+
+      - name: Open inventory PR when site map changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCOVERER_PUSH_PR: "true"
+          DISCOVERER_MERGE_PR: "false"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet reports/discoverer/; then
+            echo "No discoverer report changes to commit."
+            exit 0
+          fi
+          BRANCH="discover/inventory-$(date -u +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          git add reports/discoverer/
+          git commit -m "chore(discoverer): refresh site map after resume deploy"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "chore(discoverer): refresh site map" \
+            --body "Auto-generated site crawl after resume repository change (label: discover). Cloud agent should implement missing route tests from route_gaps in test_inventory.json."

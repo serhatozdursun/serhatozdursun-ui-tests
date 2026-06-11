@@ -44,6 +44,44 @@
     ],
     "experience_section_title": "PROFESSIONAL EXPERIENCE",
     "send_message_text": "Send a message",
+    "languages": {
+      "label": "Languages",
+      "value": "Turkish (Native), English (C1), Spanish (B)"
+    },
+    "qa_help": {
+      "label": "QA HELP",
+      "links": [
+        {
+          "text": "Practice Page",
+          "href": "https://www.serhatozdursun.com/practice"
+        },
+        {
+          "text": "CTAL-TAE Sample Exam",
+          "href": "https://www.serhatozdursun.com/ctal-tae-exam"
+        },
+        {
+          "text": "CTAL-TM Sample Exam",
+          "href": "https://www.serhatozdursun.com/ctal-tm-exam"
+        }
+      ]
+    },
+    "certificates": {
+      "entries": [
+        "AT*SQA Advisory Board 2026",
+        "ISTQB® CTAL-TM",
+        "ISTQB® CTAL-TAE",
+        "ISTQB® CTFL",
+        "PSD I"
+      ]
+    },
+    "skills": {
+      "count": 25,
+      "sample_labels": [
+        "Test Automation",
+        "Selenium",
+        "Appium"
+      ]
+    },
     "experience_companies": [
       "Poq (via Index.dev), London",
       "Affirm, United States",

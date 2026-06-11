@@ -29,6 +29,13 @@ class HomePage(BasePage):
         self.summary_locator = HOME_PAGE_LOCATORS["summary"]
         self.experience_container_locator = HOME_PAGE_LOCATORS["experience_container"]
         self.send_message_text_locator = HOME_PAGE_LOCATORS["send_message_text"]
+        self.languages_label_locator = HOME_PAGE_LOCATORS["languages_label"]
+        self.qa_help_label_locator = HOME_PAGE_LOCATORS["qa_help_label"]
+        self.practice_page_link_locator = HOME_PAGE_LOCATORS["practice_page_link"]
+        self.ctal_tae_exam_link_locator = HOME_PAGE_LOCATORS["ctal_tae_exam_link"]
+        self.ctal_tm_exam_link_locator = HOME_PAGE_LOCATORS["ctal_tm_exam_link"]
+        self.certificates_container_locator = HOME_PAGE_LOCATORS["certificates_container"]
+        self.skill_labels_locator = HOME_PAGE_LOCATORS["skill_labels"]
 
     def wait_for_page_load(self):
         self.wait_for_element(self.header_locator)
@@ -143,3 +150,41 @@ class HomePage(BasePage):
 
     def get_send_message_text(self):
         return self.get_text(self.send_message_text_locator)
+
+    def get_languages_label(self):
+        return self.get_text(self.languages_label_locator)
+
+    def get_languages_value(self):
+        label = self.wait_for_element(self.languages_label_locator)
+        parent_text = label.find_element(By.XPATH, "..").text
+        return parent_text.split(":", 1)[1].strip()
+
+    def get_qa_help_label(self):
+        label = self.wait_for_element(self.qa_help_label_locator)
+        self.scroll_into_view(label)
+        return label.text
+
+    def get_qa_help_link(self, locator):
+        link = self.wait_for_element(locator)
+        self.scroll_into_view(link)
+        return link
+
+    def get_practice_page_link(self):
+        return self.get_qa_help_link(self.practice_page_link_locator)
+
+    def get_ctal_tae_exam_link(self):
+        return self.get_qa_help_link(self.ctal_tae_exam_link_locator)
+
+    def get_ctal_tm_exam_link(self):
+        return self.get_qa_help_link(self.ctal_tm_exam_link_locator)
+
+    def get_certificates_container(self):
+        container = self.wait_for_element(self.certificates_container_locator)
+        self.scroll_into_view(container)
+        return container
+
+    def get_skill_labels(self):
+        labels = self.wait_for_elements(self.skill_labels_locator)
+        if labels:
+            self.scroll_into_view(labels[0])
+        return labels
