@@ -2,6 +2,7 @@ import os
 import shutil
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.service import Service as FirefoxService
 
@@ -34,6 +35,8 @@ class DriverManager:
             opts.page_load_strategy = "eager"
             if headless:
                 opts.add_argument("-headless")
+            opts.set_preference("general.platform.override", "MacIntel")
+            opts.set_preference("layout.css.devPixelsPerPx", "1.0")
 
             gecko_path = shutil.which("geckodriver")
             if gecko_path:
@@ -53,8 +56,19 @@ class DriverManager:
             raise ValueError(f"Browser '{browser}' is not supported.")
 
         self.driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT_SECONDS)
-        self.driver.get(self.base_url)
+        self._load_base_url()
         return self.driver
+
+    def _load_base_url(self, retries: int = 2) -> None:
+        last_error: TimeoutException | None = None
+        for _ in range(retries + 1):
+            try:
+                self.driver.get(self.base_url)
+                return
+            except TimeoutException as exc:
+                last_error = exc
+        if last_error is not None:
+            raise last_error
 
     def teardown(self):
         if self.driver:

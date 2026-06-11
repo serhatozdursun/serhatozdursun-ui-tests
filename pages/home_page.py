@@ -1,5 +1,7 @@
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from pages.base_page import BasePage
@@ -8,6 +10,11 @@ from pages.locators import HOME_PAGE_LOCATORS
 SCROLL_TO_EXPERIENCE_JS = (
     "window.scrollTo(0, arguments[0].getBoundingClientRect().top "
     "+ window.scrollY - 80);"
+)
+
+EXPAND_SIDEBAR_XPATH = (
+    "//button[contains(., 'Expand profile sidebar') "
+    "or contains(@aria-label, 'Expand profile sidebar')]"
 )
 
 
@@ -41,6 +48,42 @@ class HomePage(BasePage):
 
     def wait_for_page_load(self):
         self.wait_for_element(self.header_locator)
+
+    def _left_sidebar_content_visible(self) -> bool:
+        try:
+            qa_help = self.driver.find_element(*self.qa_help_label_locator)
+            if qa_help.is_displayed():
+                return True
+        except NoSuchElementException:
+            pass
+        try:
+            certificates = self.driver.find_element(
+                *self.certificates_container_locator
+            )
+            return certificates.is_displayed()
+        except NoSuchElementException:
+            return False
+
+    def ensure_left_sidebar_expanded(self):
+        """Expand the profile sidebar only when QA help / certificates are hidden."""
+        if self._left_sidebar_content_visible():
+            return
+
+        for button in self.driver.find_elements(By.XPATH, EXPAND_SIDEBAR_XPATH):
+            if button.is_displayed() and button.is_enabled():
+                button.click()
+                WebDriverWait(self.driver, 5).until(
+                    lambda _: self._left_sidebar_content_visible()
+                )
+                break
+
+        try:
+            left_column = self.driver.find_element(By.ID, "mobile-left-column-content")
+            self.driver.execute_script(
+                "arguments[0].scrollTop = arguments[0].scrollHeight;", left_column
+            )
+        except NoSuchElementException:
+            pass
 
     def get_header_text(self):
         """Return the header text."""
@@ -128,7 +171,7 @@ class HomePage(BasePage):
         self.driver.execute_script(SCROLL_TO_EXPERIENCE_JS, container)
 
         stale_rounds = 0
-        for _ in range(50):
+        for _ in range(80):
             prev_count = len(company_names)
             container = self.driver.find_element(*self.experience_container_locator)
             for link in container.find_elements(By.CSS_SELECTOR, "a[href]"):
@@ -143,10 +186,20 @@ class HomePage(BasePage):
 
             if len(company_names) == prev_count:
                 stale_rounds += 1
-                if stale_rounds >= 3:
+                if stale_rounds >= 6:
                     break
             else:
                 stale_rounds = 0
+
+        container = self.driver.find_element(*self.experience_container_locator)
+        self.driver.execute_script(
+            "arguments[0].scrollTop = arguments[0].scrollHeight;", container
+        )
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        for link in container.find_elements(By.CSS_SELECTOR, "a[href]"):
+            name = link.text.strip()
+            if name and "," in name:
+                company_names.add(name)
 
         return company_names
 
@@ -162,11 +215,13 @@ class HomePage(BasePage):
         return parent_text.split(":", 1)[1].strip()
 
     def get_qa_help_label(self):
+        self.ensure_left_sidebar_expanded()
         label = self.wait_for_element(self.qa_help_label_locator)
         self.scroll_into_view(label)
         return label.text
 
     def get_qa_help_link(self, locator):
+        self.ensure_left_sidebar_expanded()
         link = self.wait_for_element(locator)
         self.scroll_into_view(link)
         return link
@@ -181,12 +236,27 @@ class HomePage(BasePage):
         return self.get_qa_help_link(self.ctal_tm_exam_link_locator)
 
     def get_certificates_container(self):
-        container = self.wait_for_element(self.certificates_container_locator)
+        self.ensure_left_sidebar_expanded()
+        container = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located(self.certificates_container_locator)
+        )
         self.scroll_into_view(container)
         return container
 
+    def get_certificates_text(self):
+        container = self.get_certificates_container()
+        text = container.text.strip()
+        if text:
+            return text
+        return self.driver.execute_script(
+            "return arguments[0].innerText || '';", container
+        ).strip()
+
     def get_skill_labels(self):
-        labels = self.wait_for_elements(self.skill_labels_locator)
+        self.ensure_left_sidebar_expanded()
+        labels = WebDriverWait(self.driver, 15).until(
+            EC.presence_of_all_elements_located(self.skill_labels_locator)
+        )
         if labels:
             self.scroll_into_view(labels[0])
         return labels
