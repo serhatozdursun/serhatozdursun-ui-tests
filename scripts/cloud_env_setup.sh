@@ -26,6 +26,9 @@ fi
 
 mkdir -p reports/html reports/screenshots reports/healer reports/discoverer
 
+echo "[env] Setting up resume website (serhatozdursun/resume)..."
+bash scripts/resume_env_setup.sh
+
 echo "[env] Running lint checks..."
 poetry run ruff check .
 poetry run ruff format --check .
