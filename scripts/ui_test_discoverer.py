@@ -13,10 +13,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 JUNIT_DEFAULT = ROOT / "reports" / "report.xml"
 MANIFEST_JSON = ROOT / "reports" / "discoverer" / "discovery_manifest.json"
 INVENTORY_JSON = ROOT / "reports" / "discoverer" / "test_inventory.json"
+SITE_MAP_JSON = ROOT / "reports" / "discoverer" / "site_map.json"
 MCP_SERVER = "selenium"
+
+from utils.driver_manager import DriverManager  # noqa: E402
+from utils.site_crawler import crawl_site  # noqa: E402
 
 DISCOVER_COMMIT_PATHS = (
     "tests/",
@@ -164,39 +171,93 @@ def find_gaps(methods: list[dict[str, str]]) -> list[dict]:
     return gaps
 
 
-def mcp_session_steps(base_url: str, browser: str) -> list[dict]:
-    return [
+def build_site_map(base_url: str, browser: str, max_pages: int = 25) -> dict:
+    driver_manager = DriverManager(base_url)
+    driver = driver_manager.initialize_driver(browser=browser, headless=True)
+    try:
+        return crawl_site(driver, base_url, max_pages=max_pages)
+    finally:
+        driver_manager.teardown()
+
+
+def find_route_gaps(site_map: dict, methods: list[dict[str, str]]) -> list[dict]:
+    existing_modules = {m["module"] for m in methods}
+    gaps: list[dict] = []
+    seen_modules: set[str] = set()
+    for page in site_map.get("pages", []):
+        module = page["test_module"]
+        if module in seen_modules or module in existing_modules:
+            continue
+        seen_modules.add(module)
+        gaps.append(
+            {
+                "path": page["path"],
+                "url": page["url"],
+                "test_module": module,
+                "suggested_test_file": f"tests/{module}.py",
+                "status": "missing_test_module",
+            }
+        )
+    return gaps
+
+
+def mcp_session_steps(
+    base_url: str, browser: str, site_map: dict | None = None
+) -> list[dict]:
+    steps: list[dict] = [
         {
             "tool": "start_browser",
             "args": {"browser": browser, "options": {"headless": True}},
         },
-        {"tool": "navigate", "args": {"url": base_url}},
-        {"tool": "accessibility://current", "note": "Full page tree"},
-        {
-            "tool": "execute_script",
-            "script": (
-                "return [...document.querySelectorAll('[id]')].map(el => ({"
-                "id: el.id, tag: el.tagName, visible: el.offsetParent !== null}))"
-            ),
-            "note": "Collect all elements with id attributes",
-        },
-        {
-            "tool": "execute_script",
-            "script": (
-                "window.scrollTo(0, document.body.scrollHeight); "
-                "return document.body.scrollHeight"
-            ),
-            "note": "Scroll to bottom for lazy-loaded sections",
-        },
-        {"tool": "accessibility://current", "note": "Re-read after scroll"},
-        {"tool": "close_session"},
     ]
 
+    routes = (site_map or {}).get("routes") or [{"url": base_url, "path": "/"}]
+    for route in routes:
+        url = route["url"]
+        path = route.get("path", "/")
+        steps.extend(
+            [
+                {"tool": "navigate", "args": {"url": url}, "note": f"Route: {path}"},
+                {
+                    "tool": "accessibility://current",
+                    "note": f"Page tree for {path}",
+                },
+                {
+                    "tool": "execute_script",
+                    "script": (
+                        "window.scrollTo(0, document.body.scrollHeight); "
+                        "return document.body.scrollHeight"
+                    ),
+                    "note": f"Scroll {path} for lazy-loaded sections",
+                },
+                {
+                    "tool": "execute_script",
+                    "script": (
+                        "return [...document.querySelectorAll('[id]')].map(el => ({"
+                        "id: el.id, tag: el.tagName, "
+                        "visible: el.offsetParent !== null || "
+                        "el.getClientRects().length > 0}))"
+                    ),
+                    "note": f"Collect ids on {path}",
+                },
+                {
+                    "tool": "accessibility://current",
+                    "note": f"Re-read {path} after scroll",
+                },
+            ]
+        )
 
-def build_discovery_manifest(base_url: str, browser: str) -> dict:
+    steps.append({"tool": "close_session"})
+    return steps
+
+
+def build_discovery_manifest(
+    base_url: str, browser: str, site_map: dict | None = None
+) -> dict:
     methods = list_test_methods()
     locator_keys = list_locator_keys()
     gaps = find_gaps(methods)
+    route_gaps = find_route_gaps(site_map or {}, methods)
 
     return {
         "mcp_server": MCP_SERVER,
@@ -208,23 +269,37 @@ def build_discovery_manifest(base_url: str, browser: str) -> dict:
         "locator_keys": locator_keys,
         "known_areas": KNOWN_PAGE_AREAS,
         "gaps_from_inventory": gaps,
-        "session": mcp_session_steps(base_url, browser),
+        "site_map_path": str(SITE_MAP_JSON.relative_to(ROOT)),
+        "site_routes": (site_map or {}).get("routes", []),
+        "route_gaps": route_gaps,
+        "session": mcp_session_steps(base_url, browser, site_map),
         "agent_instructions": [
             (
                 "Read Selenium MCP tool schemas for server 'selenium' "
                 "before calling tools."
             ),
             (
-                "Run session steps; note any visible id/role not covered "
-                "by existing_tests."
+                "Read reports/discoverer/site_map.json — visit every same-domain "
+                "route listed (not external links)."
             ),
-            "Compare live page with pages/locators.py and config/test_data.json.",
+            (
+                "Run session steps for each route; note visible ids/roles not "
+                "covered by existing_tests."
+            ),
+            "Compare live pages with pages/locators.py and config/test_data.json.",
             (
                 "For each gap: add locator, page object method, "
                 "test_data entry, and test."
             ),
+            (
+                "New routes get tests/test_<route>.py and pages/<route>_page.py "
+                "(or extend locators.py with a page-specific section)."
+            ),
             "Follow POM style in tests/test_home.py (pytest_check, test_data fixture).",
-            "Run: python scripts/ui_test_discoverer.py verify --push-pr --merge-pr",
+            (
+                "Run: poetry run python scripts/ui_test_discoverer.py "
+                "--base-url <url> --push-pr --merge-pr verify"
+            ),
             "If nothing new to test, exit 0 without opening a PR.",
         ],
     }
@@ -413,26 +488,45 @@ def should_merge_pr(args: argparse.Namespace) -> bool:
 def cmd_inventory(args: argparse.Namespace) -> int:
     methods = list_test_methods()
     gaps = find_gaps(methods)
+
+    print(f"[discoverer] crawling same-domain routes from {args.base_url} ...")
+    site_map = build_site_map(args.base_url, args.browser, max_pages=args.max_pages)
+    save_json(SITE_MAP_JSON, site_map)
+    route_gaps = find_route_gaps(site_map, methods)
+
     inventory = {
         "tests": methods,
         "locator_keys": list_locator_keys(),
         "gaps": gaps,
+        "site_routes": site_map.get("routes", []),
+        "route_gaps": route_gaps,
     }
     save_json(INVENTORY_JSON, inventory)
 
-    manifest = build_discovery_manifest(args.base_url, args.browser)
+    manifest = build_discovery_manifest(args.base_url, args.browser, site_map)
     save_json(MANIFEST_JSON, manifest)
 
     print("[discoverer] inventory written:")
     print(f"  - {INVENTORY_JSON}")
     print(f"  - {MANIFEST_JSON}")
-    print(f"[discoverer] {len(methods)} existing test(s), {len(gaps)} known gap(s)")
+    print(f"  - {SITE_MAP_JSON}")
+    print(f"[discoverer] {len(methods)} existing test(s), {len(gaps)} home gap(s)")
+    print(
+        f"[discoverer] crawled {site_map.get('pages_crawled', 0)} same-domain page(s)"
+    )
+    if site_map.get("routes"):
+        for route in site_map["routes"]:
+            print(f"  - route: {route['path']} -> {route['url']}")
+    if route_gaps:
+        print(f"[discoverer] {len(route_gaps)} route(s) without test module:")
+        for gap in route_gaps:
+            print(f"  - missing: {gap['suggested_test_file']} ({gap['path']})")
     if gaps:
         for gap in gaps:
-            print(f"  - missing: {gap['test_hint']} ({gap['label']})")
+            print(f"  - missing home area: {gap['test_hint']} ({gap['label']})")
     print(
         "[discoverer] use Selenium MCP per discovery_manifest.json, "
-        "then implement tests"
+        "then implement tests for every route"
     )
     return 0
 
@@ -480,6 +574,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-push-pr", action="store_true")
     parser.add_argument("--merge-pr", action="store_true")
     parser.add_argument("--no-merge-pr", action="store_true")
+    parser.add_argument(
+        "--max-pages",
+        type=int,
+        default=25,
+        help="Max same-domain pages to crawl during inventory (default: 25)",
+    )
 
     sub = parser.add_subparsers(dest="command")
     sub.add_parser("inventory", help="Write test inventory and discovery manifest")

@@ -30,9 +30,8 @@ echo "[env] Setting up resume website (serhatozdursun/resume)..."
 bash scripts/resume_env_setup.sh
 
 echo "[env] Running lint checks..."
-poetry run ruff check .
-poetry run ruff format --check .
-poetry run black --check .
+poetry run pre-commit install
+poetry run pre-commit run --all-files
 
 echo "[env] Smoke pytest (production, chrome, quiet)..."
 poetry run pytest -q --browser=chrome -m "not in_progress" --base_url=https://www.serhatozdursun.com

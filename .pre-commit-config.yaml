@@ -1,0 +1,11 @@
+# Mirrors .github/workflows/lint.yml — uses project Poetry env (no isolated venv).
+default_install_hook_types: [pre-commit]
+
+repos:
+  - repo: local
+    hooks:
+      - id: lint
+        name: ruff + black (CI parity)
+        entry: bash scripts/pre_commit_lint.sh
+        language: system
+        pass_filenames: false
