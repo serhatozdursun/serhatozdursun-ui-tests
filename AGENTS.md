@@ -82,6 +82,28 @@ Future: `SLACK_WEBHOOK_URL` for bug notifications (not wired yet).
 | Production | `https://www.serhatozdursun.com` |
 | Local resume app | `http://localhost:3000/` |
 
+### Two-repo layout
+
+| Repository | Role | Path after setup |
+|------------|------|------------------|
+| `serhatozdursun-ui-tests` (this repo) | Selenium/pytest suite | workspace root |
+| [serhatozdursun/resume](https://github.com/serhatozdursun/resume) | Next.js site under test | `resume/` (cloned by setup) |
+
+`scripts/cloud_env_setup.sh` clones and builds `resume/`. It does **not** start the server (agents start it when running local E2E).
+
+```bash
+# One-time / update (also run by cloud_env_setup.sh)
+bash scripts/resume_env_setup.sh
+
+# Start local site on :3000 (background)
+bash scripts/resume_start.sh
+
+# Run UI tests against local build (matches ui_local_pytest.yml)
+poetry run pytest --base_url http://localhost:3000/
+```
+
+`yarn dev` needs `.env.local` (see resume `env.example`); CI and `resume_start.sh` use `yarn build` + `yarn start` and do not require EmailJS keys.
+
 ---
 
 ## Agent 1 — UI Test Healer

@@ -54,6 +54,9 @@ coverage.xml
 .venv
 .env.*
 
+# Cloned resume app (see scripts/resume_env_setup.sh)
+/resume/
+
 # C extensions
 *.so
 

@@ -45,13 +45,15 @@ Run all tests against production (default):
 poetry run pytest
 ```
 
-Test the local website build (e.g. resume app on port 3000):
+Test the local website build ([serhatozdursun/resume](https://github.com/serhatozdursun/resume) on port 3000):
 
 ```bash
+bash scripts/resume_env_setup.sh   # clone + yarn install + build → resume/
+bash scripts/resume_start.sh       # serve on http://localhost:3000/
 poetry run pytest --base_url http://localhost:3000/
-# or
-poetry run pytest --base-url http://localhost:3000/
 ```
+
+`cloud_env_setup.sh` runs `resume_env_setup.sh` automatically but does not start the server.
 
 Use Firefox instead of Chrome:
 
