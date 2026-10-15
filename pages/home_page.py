@@ -153,8 +153,11 @@ class HomePage(BasePage):
         return self.wait_for_element(self.summary_locator)
 
     def get_experience_container(self):
-        container = self.wait_for_element(self.experience_container_locator)
+        container = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located(self.experience_container_locator)
+        )
         self.scroll_into_view(container)
+        WebDriverWait(self.driver, 10).until(EC.visibility_of(container))
         WebDriverWait(self.driver, 10).until(
             lambda _: len(container.text.strip()) > len("PROFESSIONAL EXPERIENCE")
         )
@@ -197,9 +200,17 @@ class HomePage(BasePage):
         )
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         for link in container.find_elements(By.CSS_SELECTOR, "a[href]"):
-            name = link.text.strip()
-            if name and "," in name:
-                company_names.add(name)
+            name = (link.get_attribute("textContent") or "").strip()
+            if not name or "," not in name or name in company_names:
+                continue
+
+            # The last cards may still be animating after the final scroll.
+            # Assert rendered text only after the company link becomes visible.
+            self.scroll_into_view(link)
+            visible_name = WebDriverWait(self.driver, 10).until(
+                lambda _, company_link=link: company_link.text.strip()
+            )
+            company_names.add(visible_name)
 
         return company_names
 
